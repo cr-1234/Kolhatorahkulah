@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kol HaTorah Kulah Checklist</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;500;600;700&family=Frank+Ruhl+Libre:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  body {
+    font-family: 'Assistant', sans-serif;
+    background: #f8fafc;
+  }
+  .hebrew-title {
+    font-family: 'Frank Ruhl Libre', serif;
+  }
+  details > summary {
+    list-style: none;
+  }
+  details > summary::-webkit-details-marker {
+    display: none;
+  }
+  .chevron {
+    transition: transform 0.3s ease;
+  }
+  details[open] .chevron {
+    transform: rotate(180deg);
+  }
+  .checkbox-item {
+    transition: all 0.2s ease;
+  }
+  .checkbox-item:hover {
+    background-color: #f1f5f9;
+  }
+  .checkbox-item input:checked + label {
+    text-decoration: line-through;
+    color: #64748b;
+  }
+  @media print {
+    details {
+      page-break-inside: avoid;
+    }
+    details[open] summary ~ * {
+      display: block !important;
+    }
+    details:not([open]) {
+      display: block !important;
+    }
+    details:not([open]) > *:not(summary) {
+      display: block !important;
+    }
+    .no-print {
+      display: none !important;
+    }
+    body {
+      background: white;
+    }
+    .shadow-lg, .shadow-md, .shadow {
+      box-shadow: none !important;
+    }
+    .progress-sticky {
+      position: static !important;
+    }
+  }
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #f1f5f9;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #94a3b8;
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #64748b;
+  }
+</style>
+</head>
+<body class="min-h-screen text-slate-800">
+  <div class="progress-sticky no-print sticky top-0 z-50 bg-white/90 backdrop-blur-lg shadow-md border-b border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-3">
+        <h1 class="text-2xl sm:text-3xl font-bold hebrew-title text-slate-900">כל התורה כולה</h1>
+        <div class="flex flex-wrap gap-2">
+          <button id="expandAll" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-all shadow hover:shadow-md">
+            Expand All
+          </button>
+          <button id="collapseAll" class="px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white text-sm font-medium rounded-lg transition-all shadow hover:shadow-md">
+            Collapse All
+          </button>
+          <button id="printBtn" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg transition-all shadow hover:shadow-md">
+            Print
+          </button>
+          <button id="clearProgress" class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-sm font-medium rounded-lg transition-all shadow hover:shadow-md">
+            Clear Progress
+          </button>
+        </div>
+      </div>
+      <div class="space-y-2">
+        <div class="flex items-center justify-between text-sm font-medium text-slate-700">
+          <span id="progressText">Completed 0 of 0 (0%)</span>
+          <span id="progressPercent" class="text-indigo-600 font-semibold">0%</span>
+        </div>
+        <div class="w-full bg-slate-200 rounded-full h-3 overflow-hidden">
+          <div id="progressBar" class="bg-gradient-to-l from-indigo-500 to-indigo-600 h-full rounded-full transition-all duration-500 ease-out" style="width: 0%"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div id="checklistContainer" class="space-y-4"></div>
+  </main>
+
+  <footer class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-center text-slate-500 text-sm">
+    <p>Built for learning accountability • Progress saved locally</p>
+  </footer>
+
+  <script>
+    const CHECKLIST_DATA = [
+      {
+        title: 'תנ"ך',
+        subtitle: '24 ספרים',
+        items: [
+          { group: 'תורה', items: ['בראשית', 'שמות', 'ויקרא', 'במדבר', 'דברים'] },
+          { group: 'נביאים ראשונים', items: ['יהושע', 'שופטים', 'שמואל', 'מלכים'] },
+          { group: 'נביאים אחרונים', items: ['ישעיה', 'ירמיה', 'יחזקאל', 'תרי עשר'] },
+          { group: 'כתובים', items: ['תהלים', 'משלי', 'איוב', 'שיר השירים', 'רות', 'איכה', 'קהלת', 'אסתר', 'דניאל', 'עזרא-נחמיה', 'דברי הימים'] }
+        ]
+      },
+      {
+        title: 'משנה',
+        subtitle: '63 מסכתות',
+        items: [
+          { group: 'זרעים', items: ['ברכות', 'פאה', 'דמאי', 'כלאים', 'שביעית', 'תרומות', 'מעשרות', 'מעשר שני', 'חלה', 'ערלה', 'ביכורים'] },
+          { group: 'מועד', items: ['שבת', 'עירובין', 'פסחים', 'שקלים', 'יומא', 'סוכה', 'ביצה', 'ראש השנה', 'תענית', 'מגילה', 'מועד קטן', 'חגיגה'] },
+          { group: 'נשים', items: ['יבמות', 'כתובות', 'נדרים', 'נזיר', 'סוטה', 'גיטין', 'קידושין'] },
+          { group: 'נזיקין', items: ['בבא קמא', 'בבא מציעא', 'בבא בתרא', 'סנהדרין', 'מכות', 'שבועות', 'עדיות', 'עבודה זרה', 'אבות', 'הוריות'] },
+          { group: 'קדשים', items: ['זבחים', 'מנחות', 'חולין', 'בכורות', 'ערכין', 'תמורה', 'כריתות', 'מעילה', 'תמיד', 'מדות', 'קנים'] },
+          { group: 'טהרות', items: ['כלים', 'אהלות', 'נגעים', 'פרה', 'טהרות', 'מקואות', 'נדה', 'מכשירין', 'זבים', 'טבול יום', 'ידים', 'עוקצין'] }
+        ]
+      },
+      {
+        title: 'תלמוד בבלי',
+        subtitle: '37 מסכתות',
+        items: [
+          { group: 'סדר זרעים', items: ['ברכות'] },
+          { group: 'סדר מועד', items: ['שבת', 'עירובין', 'פסחים', 'ראש השנה', 'יומא', 'סוכה', 'ביצה', 'תענית', 'מגילה', 'מועד קטן', 'חגיגה'] },
+          { group: 'סדר נשים', items: ['יבמות', 'כתובות', 'נדרים', 'נזיר', 'סוטה', 'גיטין', 'קידושין'] },
+          { group: 'סדר נזיקין', items: ['בבא קמא', 'בבא מציעא', 'בבא בתרא', 'סנהדרין', 'מכות', 'שבועות', 'עבודה זרה', 'הוריות'] },
+          { group: 'סדר קדשים', items: ['זבחים', 'מנחות', 'חולין', 'בכורות', 'ערכין', 'תמורה', 'כריתות', 'מעילה', 'תמיד'] },
+          { group: 'סדר טהרות', items: ['נדה'] }
+        ]
+      },
+      {
+        title: 'תלמוד ירושלמי',
+        subtitle: '39 מסכתות',
+        items: [
+          { group: 'סדר זרעים', items: ['ברכות', 'פאה', 'דמאי', 'כלאים', 'שביעית', 'תרומות', 'מעשרות', 'מעשר שני', 'חלה', 'ערלה', 'ביכורים'] },
+          { group: 'סדר מועד', items: ['שבת', 'עירובין', 'פסחים', 'יומא', 'סוכה', 'ביצה', 'ראש השנה', 'תענית', 'מגילה', 'מועד קטן', 'חגיגה'] },
+          { group: 'סדר נשים', items: ['יבמות', 'כתובות', 'נדרים', 'נזיר', 'סוטה', 'גיטין', 'קידושין'] },
+          { group: 'סדר נזיקין', items: ['בבא קמא', 'בבא מציעא', 'בבא בתרא', 'סנהדרין', 'מכות', 'שבועות', 'עבודה זרה', 'הוריות'] },
+          { group: 'סדר טהרות', items: ['נדה'] }
+        ]
+      },
+      {
+        title: 'מדרשי הלכה',
+        subtitle: '',
+        items: [
+          { group: '', items: ['תוספתא', 'ספרא', 'ספרי במדבר', 'ספרי דברים', 'מכילתא דרבי ישמעאל'] }
+        ]
+      },
+      {
+        title: 'מדרשי אגדה',
+        subtitle: '18 ספרים',
+        items: [
+          { group: '', items: ['בראשית רבה', 'שמות רבה', 'ויקרא רבה', 'במדבר רבה', 'דברים רבה', 'שיר השירים רבה', 'רות רבה', 'איכה רבה', 'קהלת רבה', 'אסתר רבה', 'מדרש תנחומא', 'פסיקתא דרב כהנא', 'פסיקתא רבתי', 'פרקי דרבי אליעזר', 'תנא דבי אליהו', 'מדרש תהלים', 'ילקוט שמעוני', 'סדר עולם רבה'] }
+        ]
+      },
+      {
+        title: 'זוהר',
+        subtitle: '',
+        items: [
+          { group: '', items: ['זהר', 'זהר חדש', 'תיקוני זהר'] }
+        ]
+      },
+      {
+        title: 'רמב"ם - משנה תורה',
+        subtitle: '14 ספרים',
+        items: [
+          { group: '', items: ['ספר המדע', 'ספר אהבה', 'ספר זמנים', 'ספר נשים', 'ספר קדושה', 'ספר הפלאה', 'ספר זרעים', 'ספר עבודה', 'ספר קרבנות', 'ספר טהרה', 'ספר נזקים', 'ספר קנין', 'ספר משפטים', 'ספר שופטים'] }
+        ]
+      },
+      {
+        title: 'טור',
+        subtitle: '4 חלקים',
+        items: [
+          { group: '', items: ['אורח חיים', 'יורה דעה', 'אבן העזר', 'חושן משפט'] }
+        ]
+      },
+      {
+        title: 'שולחן ערוך',
+        subtitle: '4 חלקים',
+        items: [
+          { group: '', items: ['אורח חיים', 'יורה דעה', 'אבן העזר', 'חושן משפט'] }
+        ]
+      }
+    ];
+
+    const STORAGE_KEY = 'kolHaTorahKulah-heb-v2';
+    let state = {};
+    let totalItems = 0;
+
+    function slugify(text) {
+      return text.replace(/\s+/g, '-').replace(/[^\u0590-\u05FF\w\-]/g, '');
+    }
+
+    function loadState() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        state = saved ? JSON.parse(saved) : {};
+      } catch (e) {
+        state = {};
+      }
+    }
+
+    function saveState() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      } catch (e) {
+        console.error('Failed to save state:', e);
+      }
+    }
+
+    function createSection(section, sectionIndex) {
+      const sectionId = `section-${sectionIndex}`;
+      let sectionItems = 0;
+      let sectionChecked = 0;
+      
+      const itemsHtml = section.items.map((group, groupIndex) => {
+        const groupItemsHtml = group.items.map((item) => {
+          const itemId = `item-${sectionIndex}-${groupIndex}-${slugify(item)}`;
+          const isChecked = state[itemId] === true;
+          totalItems++;
+          sectionItems++;
+          if (isChecked) sectionChecked++;
+          
+          return `
+            <div class="checkbox-item flex items-center gap-3 px-4 py-2.5 rounded-lg">
+              <input 
+                type="checkbox" 
+                id="${itemId}" 
+                data-id="${itemId}"
+                class="w-5 h-5 text-indigo-600 rounded border-slate-300 focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+                ${isChecked ? 'checked' : ''}
+              >
+              <label for="${itemId}" class="flex-1 cursor-pointer text-slate-700 hebrew-title text-base select-none">
+                ${item}
+              </label>
+            </div>
+          `;
+        }).join('');
+        
+        if (group.group) {
+          return `
+            <div class="mb-4">
+              <h4 class="text-sm font-semibold text-slate-500 uppercase tracking-wide px-4 mb-2 hebrew-title">${group.group}</h4>
+              <div class="space-y-1">${groupItemsHtml}</div>
+            </div>
+          `;
+        }
+        return `<div class="space-y-1">${groupItemsHtml}</div>`;
+      }).join('');
+      
+      const percent = sectionItems > 0 ? Math.round((sectionChecked / sectionItems) * 100) : 0;
+      
+      return `
+        <details id="${sectionId}" class="bg-white rounded-xl shadow-md overflow-hidden border border-slate-200">
+          <summary class="px-5 py-4 cursor-pointer select-none hover:bg-slate-50 transition-colors">
+            <div class="flex items-center justify-between gap-4">
+              <div class="flex-1">
+                <div class="flex items-center gap-3 flex-wrap">
+                  <h3 class="text-xl font-bold hebrew-title text-slate-900">${section.title}</h3>
+                  ${section.subtitle ? `<span class="text-sm text-slate-500 font-medium">${section.subtitle}</span>` : ''}
+                </div>
+                <div class="mt-2 flex items-center gap-2">
+                  <div class="flex-1 bg-slate-200 rounded-full h-2 overflow-hidden">
+                    <div class="bg-gradient-to-l from-indigo-500 to-indigo-600 h-full transition-all duration-300" style="width: ${percent}%"></div>
+                  </div>
+                  <span class="text-xs font-semibold text-slate-600 min-w-[3rem] text-left">${sectionChecked}/${sectionItems}</span>
+                </div>
+              </div>
+              <svg class="chevron w-6 h-6 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+              </svg>
+            </div>
+          </summary>
+          <div class="border-t border-slate-200 bg-slate-50/50 px-2 py-4">
+            ${itemsHtml}
+          </div>
+        </details>
+      `;
+    }
+
+    function renderChecklist() {
+      totalItems = 0;
+      const html = CHECKLIST_DATA.map((section, idx) => createSection(section, idx)).join('');
+      document.getElementById('checklistContainer').innerHTML = html;
+      updateProgress();
+      attachCheckboxListeners();
+    }
+
+    function updateProgress() {
+      const checkboxes = document.querySelectorAll('input[type="checkbox"][data-id]');
+      const checked = Array.from(checkboxes).filter(cb => cb.checked).length;
+      const total = checkboxes.length;
+      const percent = total > 0 ? Math.round((checked / total) * 100) : 0;
+      
+      document.getElementById('progressText').textContent = `Completed ${checked} of ${total} (${percent}%)`;
+      document.getElementById('progressPercent').textContent = `${percent}%`;
+      document.getElementById('progressBar').style.width = `${percent}%`;
+      
+      CHECKLIST_DATA.forEach((section, sectionIndex) => {
+        const sectionEl = document.getElementById(`section-${sectionIndex}`);
+        if (!sectionEl) return;
+        
+        const sectionCheckboxes = sectionEl.querySelectorAll('input[type="checkbox"]');
+        const sectionChecked = Array.from(sectionCheckboxes).filter(cb => cb.checked).length;
+        const sectionTotal = sectionCheckboxes.length;
+        const sectionPercent = sectionTotal > 0 ? Math.round((sectionChecked / sectionTotal) * 100) : 0;
+        
+        const bar = sectionEl.querySelector('summary .bg-gradient-to-l');
+        const count = sectionEl.querySelector('summary .text-xs');
+        if (bar) bar.style.width = `${sectionPercent}%`;
+        if (count) count.textContent = `${sectionChecked}/${sectionTotal}`;
+      });
+    }
+
+    function attachCheckboxListeners() {
+      document.querySelectorAll('input[type="checkbox"][data-id]').forEach(checkbox => {
+        checkbox.addEventListener('change', (e) => {
+          const id = e.target.getAttribute('data-id');
+          state[id] = e.target.checked;
+          saveState();
+          updateProgress();
+        });
+      });
+    }
+
+    function expandAll() {
+      document.querySelectorAll('#checklistContainer details').forEach(d => d.setAttribute('open', ''));
+    }
+
+    function collapseAll() {
+      document.querySelectorAll('#checklistContainer details').forEach(d => d.removeAttribute('open'));
+    }
+
+    function clearProgress() {
+      if (confirm('Are you sure you want to clear all progress? This cannot be undone.')) {
+        state = {};
+        saveState();
+        document.querySelectorAll('input[type="checkbox"][data-id]').forEach(cb => cb.checked = false);
+        updateProgress();
+      }
+    }
+
+    function handlePrint() {
+      expandAll();
+      setTimeout(() => window.print(), 100);
+    }
+
+    document.getElementById('expandAll').addEventListener('click', expandAll);
+    document.getElementById('collapseAll').addEventListener('click', collapseAll);
+    document.getElementById('clearProgress').addEventListener('click', clearProgress);
+    document.getElementById('printBtn').addEventListener('click', handlePrint);
+
+    loadState();
+    renderChecklist();
+
+    window.addEventListener('beforeprint', () => {
+      document.querySelectorAll('#checklistContainer details').forEach(d => {
+        d.setAttribute('open', '');
+        d.setAttribute('data-was-open', 'true');
+      });
+    });
+
+    window.addEventListener('afterprint', () => {
+      document.querySelectorAll('#checklistContainer details[data-was-open]').forEach(d => {
+        d.removeAttribute('data-was-open');
+      });
+    });
+  </script>
+<script>(function(){document.addEventListener("click",function(e){var a=e.target.closest("[data-product-id]");if(!a)return;e.preventDefault();var pid=a.getAttribute("data-product-id");if(pid)parent.postMessage({type:"ecto-artifact-link-click",productId:pid},"*")})})();</script>
+</body>
+</html>
